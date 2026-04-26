@@ -24,9 +24,9 @@ class AIService:
         messages.append({"role": "user", "content": user_text})
 
         response = await self.client.chat.completions.create(
-            model="llama3-8b-8192", # Ensure it is 8B, not 70B
+            model="llama-3.1-8b-instant",  # Updated to the new supported model
             messages=messages,
-            max_tokens=50, # Keep this very small for voice
+            max_tokens=50,
             temperature=0.5,
-        )
+)
         return response.choices[0].message.content
