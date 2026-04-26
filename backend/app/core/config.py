@@ -1,35 +1,47 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, AliasChoices
+import logging
+
+# Setup a logger to see errors in Vercel logs
+logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     # Project Identity
-    PROJECT_NAME: str = Field(default="Glacia AI Backend", env="PROJECT_NAME")
-    ENV: str = Field(default="development", env="ENV")
+    PROJECT_NAME: str = "Glacia AI Backend"
+    ENV: str = "development"
 
     # Database Configuration
-    # We leave the default empty or local so it FORCES the use of .env/Vercel variables
-    MONGODB_URL: str = Field(..., env="MONGODB_URL") 
-    DATABASE_NAME: str = Field(default="glacia_labs", env="DATABASE_NAME")
+    # We change '...' to a default string to prevent startup crashes
+    MONGODB_URL: str = Field(
+        default="MISSING", 
+        validation_alias=AliasChoices("MONGODB_URL", "MONGODB_URI")
+    )
+    DATABASE_NAME: str = "glacia_labs"
 
     # API Keys
-    # Using '...' makes this a REQUIRED field; the app will crash on startup 
-    # if the key is missing, which is safer for production.
-    GROQ_API_KEY: str = Field(..., env="GROQ_API_KEY")
+    GROQ_API_KEY: str = Field(default="MISSING")
 
     # Pydantic Settings Configuration
     model_config = SettingsConfigDict(
-        # This looks for a .env file in the same directory
+        # This will look for a .env file locally but won't crash if missing on Vercel
         env_file=".env",
         env_file_encoding="utf-8",
-        # 'ignore' allows extra variables in your .env without crashing
-        extra="ignore"
+        extra="ignore",
+        case_sensitive=False 
     )
 
 # Instantiate settings
 try:
     settings = Settings()
+    
+    # Validation check after instantiation
+    if settings.MONGODB_URL == "MISSING" or settings.GROQ_API_KEY == "MISSING":
+        print("⚠️ WARNING: One or more critical environment variables are missing!")
+        print(f"MONGODB_URL status: {'✅ Loaded' if settings.MONGODB_URL != 'MISSING' else '❌ MISSING'}")
+        print(f"GROQ_API_KEY status: {'✅ Loaded' if settings.GROQ_API_KEY != 'MISSING' else '❌ MISSING'}")
+
 except Exception as e:
-    print("❌ Configuration Error: Missing required environment variables.")
-    print(f"Details: {e}")
-    # In a local environment, this helps you debug what's missing
+    print(f"❌ Configuration Error during boot: {e}")
+    # We still raise e here because if the class structure itself is wrong, 
+    # we need to know. But with defaults, it shouldn't raise a ValidationError.
     raise e
