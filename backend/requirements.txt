@@ -5,7 +5,10 @@ openai==1.14.0
 python-dotenv==1.0.1
 gTTS==2.5.1
 edge-tts==6.1.10
-# --- DATABASE FIX ---
+aiohttp==3.9.3
+
+# --- DATABASE STABILITY FIX ---
+# Pinning these specifically to prevent the '_QUERY_OPTIONS' ImportError
 motor==3.3.1
 pymongo==4.6.3
 beanie==1.25.0
