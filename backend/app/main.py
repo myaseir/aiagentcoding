@@ -3,12 +3,17 @@ import os
 from contextlib import asynccontextmanager
 
 # --- SYSTEM PATH STABILIZATION ---
-# This ensures that even when running via 'uvicorn', 
-# the 'app' module is discoverable.
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Since main.py is INSIDE the 'app' folder, we add the parent directory 
+# to sys.path so that 'from app.core...' remains a valid absolute import.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# These imports now work because the parent directory is in sys.path
 from app.core.database import init_db
 from app.api.v1.assistant import router as assistant_router
 
@@ -29,7 +34,6 @@ async def lifespan(app: FastAPI):
     print("🔌 Glacia Systems: Backend services safely terminated.")
 
 # --- APP INSTANCE ---
-# This 'app' object is what uvicorn looks for
 app = FastAPI(
     title="Glacia AI Backend",
     description="Professional Voice Intelligence for Glacia Labs",
@@ -40,7 +44,7 @@ app = FastAPI(
 # --- SECURITY & CORS ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Update to specific domains for production
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,9 +67,7 @@ app.include_router(
     tags=["Assistant"]
 )
 
-# NOTE: The 'if __name__ == "__main__"' block is no longer strictly 
-# necessary when using 'uvicorn main:app', but it's good practice 
-# to keep it as a fallback for direct script execution.
 if __name__ == "__main__":
     import uvicorn
+    # Use the string reference so reload works correctly
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
