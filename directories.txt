@@ -1,4 +1,5 @@
 app/
+main.py
 ├── api/
 │   └── v1/
 │       └── assistant.py     <-- Chat & Voice endpoints
