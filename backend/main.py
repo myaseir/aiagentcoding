@@ -1,52 +1,71 @@
+import sys
+import os
+from contextlib import asynccontextmanager
+
+# --- SYSTEM PATH STABILIZATION ---
+# This ensures that even when running via 'uvicorn', 
+# the 'app' module is discoverable.
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 from app.core.database import init_db
 from app.api.v1.assistant import router as assistant_router
 
-# The Lifespan context manager replaces @app.on_event("startup")
-# It handles the setup and teardown of the database connection cleanly.
+# --- LIFESPAN (Database Init) ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Logic to run on startup
+    """
+    Handles startup (DB connection) and shutdown logic.
+    """
     try:
         await init_db()
-        print("🚀 Glacia Labs AI: MongoDB connection initialized successfully.")
+        print("✅ Glacia Systems: Connected to MongoDB Atlas successfully.")
     except Exception as e:
-        print(f"❌ Database connection failed: {e}")
+        print(f"❌ Glacia Systems: Database connection failed: {e}")
     
     yield
     
-    # Logic to run on shutdown (if needed)
-    print("🔌 Glacia Labs AI: Shutting down backend services.")
+    print("🔌 Glacia Systems: Backend services safely terminated.")
 
-# Initialize the FastAPI app with the lifespan handler
+# --- APP INSTANCE ---
+# This 'app' object is what uvicorn looks for
 app = FastAPI(
     title="Glacia AI Backend",
-    description="Production-grade Voice Assistant Backend for Glacia Labs",
-    version="1.0.0",
+    description="Professional Voice Intelligence for Glacia Labs",
+    version="1.1.0",
     lifespan=lifespan
 )
 
-# Standard Glacia Labs CORS configuration
-# This allows your Next.js frontend to talk to this FastAPI backend
+# --- SECURITY & CORS ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, replace with ["http://localhost:3000", "https://yourdomain.com"]
+    allow_origins=["*"], # Update to specific domains for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Health Check Endpoint
+# --- SYSTEM ENDPOINTS ---
 @app.get("/health", tags=["System"])
-async def health_check():
-    return {"status": "online", "service": "Glacia AI Backend"}
+async def health():
+    """Returns the operational status of the Glacia Backend."""
+    return {
+        "status": "online",
+        "latency": "optimized",
+        "engine": "Llama-3.1-8B-Instant"
+    }
 
-# Include the Assistant Router
-app.include_router(assistant_router, prefix="/api/v1/assistant", tags=["Assistant"])
+# --- ASSISTANT ROUTING ---
+app.include_router(
+    assistant_router, 
+    prefix="/api/v1/assistant", 
+    tags=["Assistant"]
+)
 
+# NOTE: The 'if __name__ == "__main__"' block is no longer strictly 
+# necessary when using 'uvicorn main:app', but it's good practice 
+# to keep it as a fallback for direct script execution.
 if __name__ == "__main__":
     import uvicorn
-    # Using 0.0.0.0 allows you to access this from your local network (e.g., your phone)
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
