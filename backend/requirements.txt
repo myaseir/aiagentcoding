@@ -6,6 +6,7 @@ python-dotenv==1.0.1
 gTTS==2.5.1
 edge-tts==6.1.10
 aiohttp==3.9.3
+dnspython==2.6.1
 
 # --- DATABASE STABILITY FIX ---
 # Pinning these specifically to prevent the '_QUERY_OPTIONS' ImportError
