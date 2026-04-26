@@ -1,0 +1,13 @@
+[project]
+name = "glacia-backend"
+version = "0.1.0"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic-settings"
+]
+
+[project.scripts]
+# This tells Vercel: "Look inside the 'app' folder, 
+# find 'main.py', and look for the 'app' variable."
+app = "app.main:app"
